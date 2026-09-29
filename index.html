@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HealthBot — Health Awareness Assistant</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --green:  #22c55e;
+      --teal:   #0d9488;
+      --dark:   #0f172a;
+      --card:   #1e293b;
+      --border: #334155;
+      --muted:  #94a3b8;
+      --light:  #f1f5f9;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #134e4a 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    /* ── Header ── */
+    header {
+      width: 100%;
+      max-width: 800px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .logo { font-size: 2.4rem; margin-bottom: 4px; }
+    header h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.5px;
+    }
+    header h1 span { color: var(--green); }
+    header p {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-top: 6px;
+    }
+
+    /* ── Disclaimer banner ── */
+    .disclaimer {
+      width: 100%;
+      max-width: 800px;
+      background: rgba(234, 179, 8, 0.15);
+      border: 1px solid rgba(234, 179, 8, 0.4);
+      border-radius: 10px;
+      padding: 10px 16px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 16px;
+      color: #fde68a;
+      font-size: 0.82rem;
+    }
+    .disclaimer span { font-size: 1.1rem; }
+
+    /* ── Topic chips ── */
+    .chips {
+      width: 100%;
+      max-width: 800px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .chip {
+      background: rgba(34,197,94,0.12);
+      border: 1px solid rgba(34,197,94,0.35);
+      color: var(--green);
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .chip:hover {
+      background: rgba(34,197,94,0.25);
+      transform: translateY(-1px);
+    }
+
+    /* ── Chat window ── */
+    #chat-window {
+      width: 100%;
+      max-width: 800px;
+      flex: 1;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      overflow-y: auto;
+      min-height: 400px;
+      max-height: 55vh;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      scroll-behavior: smooth;
+    }
+
+    /* ── Messages ── */
+    .msg {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      animation: fadeUp .3s ease;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .msg.user { flex-direction: row-reverse; }
+
+    .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+    .msg.bot  .avatar { background: linear-gradient(135deg, var(--teal), var(--green)); }
+    .msg.user .avatar { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
+
+    .bubble {
+      max-width: 75%;
+      padding: 12px 16px;
+      border-radius: 16px;
+      font-size: 0.92rem;
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+    .msg.bot  .bubble {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      color: var(--light);
+      border-top-left-radius: 4px;
+    }
+    .msg.user .bubble {
+      background: linear-gradient(135deg, var(--teal), var(--green));
+      color: #fff;
+      border-top-right-radius: 4px;
+    }
+
+    /* Typing dots */
+    .typing-dots { display: flex; gap: 5px; padding: 4px 0; }
+    .typing-dots span {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--muted);
+      animation: bounce 1.2s infinite;
+    }
+    .typing-dots span:nth-child(2) { animation-delay: .2s; }
+    .typing-dots span:nth-child(3) { animation-delay: .4s; }
+    @keyframes bounce {
+      0%,80%,100% { transform: translateY(0); }
+      40%          { transform: translateY(-6px); }
+    }
+
+    /* ── Input bar ── */
+    .input-bar {
+      width: 100%;
+      max-width: 800px;
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    #user-input {
+      flex: 1;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 18px;
+      color: #fff;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color .2s;
+      resize: none;
+      min-height: 52px;
+      max-height: 120px;
+    }
+    #user-input::placeholder { color: var(--muted); }
+    #user-input:focus { border-color: var(--green); }
+
+    #send-btn {
+      background: linear-gradient(135deg, var(--teal), var(--green));
+      border: none;
+      border-radius: 12px;
+      padding: 0 22px;
+      color: #fff;
+      font-size: 1.3rem;
+      cursor: pointer;
+      transition: opacity .2s, transform .1s;
+    }
+    #send-btn:hover   { opacity: .9; transform: scale(1.04); }
+    #send-btn:active  { transform: scale(.97); }
+    #send-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+    /* Footer */
+    footer {
+      color: var(--muted);
+      font-size: 0.75rem;
+      text-align: center;
+      margin-top: 14px;
+    }
+
+    /* Scrollbar */
+    #chat-window::-webkit-scrollbar { width: 5px; }
+    #chat-window::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    @media (max-width: 600px) {
+      header h1 { font-size: 1.4rem; }
+      .bubble { max-width: 88%; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="logo">🌿</div>
+    <h1>Health<span>Bot</span> — Awareness Assistant</h1>
+    <p>General health education · Prevention · Healthy lifestyle tips</p>
+  </header>
+
+  <!-- Disclaimer -->
+  <div class="disclaimer">
+    <span>⚠️</span>
+    <div>
+      <strong>Not medical advice.</strong> This bot provides general health education only.
+      For diagnosis, treatment, or emergencies — please consult a licensed healthcare professional or call emergency services.
+    </div>
+  </div>
+
+  <!-- Quick-topic chips -->
+  <div class="chips" id="chips">
+    <button class="chip" onclick="quickAsk('Healthy diet tips')">🥗 Healthy Diet</button>
+    <button class="chip" onclick="quickAsk('How much exercise do I need per week?')">🏃 Exercise Guide</button>
+    <button class="chip" onclick="quickAsk('How to improve sleep quality?')">😴 Better Sleep</button>
+    <button class="chip" onclick="quickAsk('Ways to manage stress naturally')">🧘 Stress Relief</button>
+    <button class="chip" onclick="quickAsk('How to stay hydrated?')">💧 Hydration</button>
+    <button class="chip" onclick="quickAsk('Mental health self-care tips')">🧠 Mental Health</button>
+    <button class="chip" onclick="quickAsk('Common disease prevention tips')">🛡️ Prevention</button>
+    <button class="chip" onclick="quickAsk('Benefits of vitamins and minerals')">💊 Vitamins</button>
+  </div>
+
+  <!-- Chat window -->
+  <div id="chat-window">
+    <div class="msg bot">
+      <div class="avatar">🌿</div>
+      <div class="bubble">
+👋 Hello! I'm <strong>HealthBot</strong>, your personal Health Awareness Assistant.
+
+I can help you with:
+• 🥗 Nutrition & healthy eating
+• 🏃 Exercise & fitness routines
+• 😴 Sleep & recovery tips
+• 🧠 Mental health & stress management
+• 🛡️ Disease prevention & wellness habits
+• 💧 Hydration & lifestyle advice
+
+<strong>Remember:</strong> I provide general health education only — not medical diagnosis or treatment. Always consult a doctor for personal medical concerns.
+
+What health topic would you like to learn about today?
+      </div>
+    </div>
+  </div>
+
+  <!-- Input -->
+  <div class="input-bar">
+    <textarea id="user-input" placeholder="Ask me about health, nutrition, fitness..." rows="1"
+      onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+    <button id="send-btn" onclick="sendMessage()" title="Send">➤</button>
+  </div>
+
+  <footer>HealthBot uses AI · Not a substitute for professional medical advice</footer>
+
+  <script>
+    const API_KEY = "AIzaSyDqeUQuyHp7-5m5tHFbZ2VHJF5Oi2Nk4cw";
+    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
+
+    const SYSTEM_PROMPT = `You are HealthBot, a friendly and knowledgeable Health Awareness Assistant.
+
+Your role:
+- Provide accurate, helpful general health EDUCATION about nutrition, exercise, sleep, mental health, hydration, disease prevention, and healthy lifestyle habits.
+- Use clear, simple language accessible to everyone.
+- Be warm, supportive, and encouraging.
+- Structure answers with bullet points or short sections when helpful.
+- Use relevant emojis to make responses engaging.
+
+STRICT RULES you must NEVER break:
+1. NEVER diagnose any medical condition.
+2. NEVER recommend specific prescription medications or dosages.
+3. NEVER provide emergency treatment instructions — always direct to emergency services (911 or local equivalent).
+4. NEVER claim your information replaces professional medical advice.
+5. If someone describes symptoms of an emergency (chest pain, difficulty breathing, stroke signs, severe bleeding), IMMEDIATELY tell them to call emergency services and stop giving health tips.
+6. If someone asks for a diagnosis or treatment for their specific condition, gently decline and recommend seeing a licensed healthcare professional.
+
+Always end responses to symptom-related questions with a reminder to consult a doctor.`;
+
+    let history = [];
+
+    async function sendMessage() {
+      const input = document.getElementById('user-input');
+      const text  = input.value.trim();
+      if (!text) return;
+
+      input.value = '';
+      autoResize(input);
+      appendMsg('user', text);
+      history.push({ role: 'user', parts: [{ text }] });
+
+      const btn = document.getElementById('send-btn');
+      btn.disabled = true;
+      const typingEl = showTyping();
+
+      try {
+        const body = {
+          system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
+          contents: history,
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 1024,
+          }
+        };
+
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+
+        const data = await res.json();
+        typingEl.remove();
+
+        if (!res.ok) {
+          const errMsg = data?.error?.message || 'API error. Please try again.';
+          appendMsg('bot', `⚠️ ${errMsg}`);
+          history.pop();
+        } else {
+          const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I could not generate a response.';
+          appendMsg('bot', reply);
+          history.push({ role: 'model', parts: [{ text: reply }] });
+        }
+      } catch (err) {
+        typingEl.remove();
+        appendMsg('bot', '⚠️ Connection error. Please check your internet and try again.');
+        history.pop();
+      }
+
+      btn.disabled = false;
+      input.focus();
+    }
+
+    function quickAsk(q) {
+      document.getElementById('user-input').value = q;
+      sendMessage();
+    }
+
+    function appendMsg(role, text) {
+      const win = document.getElementById('chat-window');
+      const div = document.createElement('div');
+      div.className = `msg ${role}`;
+      div.innerHTML = `
+        <div class="avatar">${role === 'bot' ? '🌿' : '👤'}</div>
+        <div class="bubble">${escapeHtml(text)}</div>`;
+      win.appendChild(div);
+      win.scrollTop = win.scrollHeight;
+    }
+
+    function showTyping() {
+      const win = document.getElementById('chat-window');
+      const div = document.createElement('div');
+      div.className = 'msg bot';
+      div.innerHTML = `<div class="avatar">🌿</div>
+        <div class="bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
+      win.appendChild(div);
+      win.scrollTop = win.scrollHeight;
+      return div;
+    }
+
+    function handleKey(e) {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+    }
+
+    function autoResize(el) {
+      el.style.height = 'auto';
+      el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+    }
+
+    function escapeHtml(t) {
+      return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+               .replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+    }
+  </script>
+</body>
+</html>
